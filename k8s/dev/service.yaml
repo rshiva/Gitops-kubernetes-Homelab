@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: python-dynamo-lab-Service
+  namespace: python-dynamo-lab
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      targetPort: 8001
+      port: 80
+  selector:
+    app: python-dynamo-lab-app
