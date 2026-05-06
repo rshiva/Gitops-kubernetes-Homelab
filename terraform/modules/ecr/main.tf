@@ -15,7 +15,6 @@ resource "aws_ecr_repository" "devopsrt-home-lab"{
 
 resource "aws_ecr_lifecycle_policy" "devopsrt-home-lab-policy" {
   repository = aws_ecr_repository.devopsrt-home-lab.name
-  tags = { Name = "${local.name_prefix}-ecr_repository-policy"}
 
   policy = <<EOF
 {
