@@ -1,10 +1,10 @@
-apiVersion: apps/v1
+apiVersion: v1
 kind: Service
 metadata:
-  name: python-dynamo-lab-Service
+  name: python-dynamo-lab-svc
   namespace: python-dynamo-lab
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - name: http
       targetPort: 8001

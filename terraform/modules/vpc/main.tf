@@ -137,3 +137,20 @@ resource "aws_nat_gateway" "nat" {
 #   allocation_id  = aws_eip.nat-eip.id
 #   nat_gateway_id = aws_nat_gateway.nat.id
 # }
+
+
+#Create the VPC endpoint in for dynamodb
+resource "aws_vpc_endpoint" "dynamodb" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.region}.dynamodb"
+  vpc_endpoint_type = "Gateway"    # DynamoDB uses Gateway type, not Interface
+
+  route_table_ids = concat(
+    aws_route_table.private_rt[*].id,
+    [aws_route_table.public_rt.id]
+  )
+
+  tags = {
+    Name = "${local.name_prefix}-dynamodb-endpoint"
+  }
+}
