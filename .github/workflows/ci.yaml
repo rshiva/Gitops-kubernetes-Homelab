@@ -21,7 +21,7 @@ jobs:
         run: pytest app/tests/test-api.py --cov=app --cov-fail-under=80 --cov-report=xml:app/coverage.xml
 
       - name: upload coverage
-        uses: action/upload-artifact@v7
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-xml
           path: app/coverage.xml
