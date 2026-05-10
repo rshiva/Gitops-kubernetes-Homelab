@@ -52,6 +52,7 @@ jobs:
             -Dsonar.tests=tests/
             -Dsonar.test.exclusions=tests/**
             -Dsonar.verbose=true
+            -Dsonar.projectKey=${{ SONAR_PROJECT_KEY }}
 
   security-scan:
     runs-on: ubuntu-latest
