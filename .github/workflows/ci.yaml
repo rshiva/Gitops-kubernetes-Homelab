@@ -1,5 +1,15 @@
 name: Scan CI on pull request
-on: pull_request
+
+permissions:
+  contents: read
+  security-events: write # Required for uploading SARIF to Security Tab
+  actions: read          # Required for downloading artifacts
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
 
 jobs:
   build-test:
