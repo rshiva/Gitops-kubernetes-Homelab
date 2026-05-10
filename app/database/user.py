@@ -1,66 +1,61 @@
-from .db import dynamodb
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 from fastapi.responses import JSONResponse
-from boto3.dynamodb.conditions import Key
 
-table = dynamodb.Table("users")
+from .db import get_dynamodb_resource
 
+
+def get_table():
+    return get_dynamodb_resource().Table("users")
 
 def create_user(user: dict):
+    table = get_table()
     try:
         table.put_item(Item=user)
         return user
     except ClientError as e:
-        return JSONResponse(content=e.response["Error"], status_code=500)
+        print(f"❌ create_user error: {e.response['Error']['Message']}")
+        return JSONResponse(content={"error": e.response["Error"]["Message"]}, status_code=500)
 
-
-def get_user(id: int):
+def get_user(id: str):
+    table = get_table()
     try:
-        response = table.query(
-            KeyConditionExpression=Key("id").eq(id)
-        )
+        response = table.query(KeyConditionExpression=Key("id").eq(id))
         return response["Items"]
     except ClientError as e:
-        return JSONResponse(content=e.response["Error"], status_code=500)
-
+        print(f"❌ get_user error: {e.response['Error']['Message']}")
+        return JSONResponse(content={"error": e.response["Error"]["Message"]}, status_code=500)
 
 def get_users():
+    table = get_table()
     try:
+        # ✅ Fixed: Use ProjectionExpression instead of deprecated AttributesToGet
         response = table.scan(
             Limit=5,
-            AttributesToGet=["username", "id"]
+            ProjectionExpression="id, username"
         )
         return response["Items"]
     except ClientError as e:
-        return JSONResponse(content=e.response["Error"], status_code=500)
-
+        print(f"❌ get_users error: {e.response['Error']['Message']}")
+        return JSONResponse(content={"error": e.response["Error"]["Message"]}, status_code=500)
 
 def delete_user(user: dict):
+    table = get_table()
     try:
-        response = table.delete_item(
-            Key={
-                "id": user["id"],
-                "created_at": user["created_at"],
-            }
-        )
-        return response
+        return table.delete_item(Key={"id": user["id"], "created_at": user["created_at"]})
     except ClientError as e:
-        return JSONResponse(content=e.response["Error"], status_code=500)
-
+        print(f"❌ delete_user error: {e.response['Error']['Message']}")
+        return JSONResponse(content={"error": e.response["Error"]["Message"]}, status_code=500)
 
 def update_user(user: dict):
+    table = get_table()
     try:
-        response = table.update_item(
-            Key={
-                "id": user["id"],
-                "created_at": user["created_at"],
-            },
+        return table.update_item(
+            Key={"id": user["id"], "created_at": user["created_at"]},
             UpdateExpression="SET username = :username, age = :age",
-            ExpressionAttributeValues={
-                ":username": user["username"],
-                ":age": user["age"]
-            }
+            ExpressionAttributeValues={":username": user["username"], ":age": user["age"]},
+            ReturnValues="ALL_NEW"
         )
-        return response
     except ClientError as e:
-        return JSONResponse(content=e.response["Error"], status_code=500)
+        print(f"❌ update_user error: {e.response['Error']['Message']}")
+        return JSONResponse(content={"error": e.response["Error"]["Message"]}, status_code=500)

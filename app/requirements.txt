@@ -1,4 +1,12 @@
-fastapi
+fastapi>=0.115.0
+starlette>=0.37.2
 uvicorn
 boto3
 python-dotenv
+pytest-cov
+coverage
+pytest
+pytest-asyncio
+httpx>=0.27.0
+moto
+ruff

@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from database.db import create_tables
 from routes.user import user_routes
 
