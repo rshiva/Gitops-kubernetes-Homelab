@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: use python 3.12
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -18,7 +18,7 @@ jobs:
           pip install -r app/requirements.txt
 
       - name: run tests
-        run: pytest app/tests/test-api.py --cov=app --cov-fail-under=80 --cov-report=xml:app/coverage.xml
+        run: pytest app/tests/test_api.py --cov=app --cov-fail-under=80 --cov-report=xml:app/coverage.xml
 
       - name: upload coverage
         uses: actions/upload-artifact@v7
@@ -40,7 +40,7 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{vars.SONAR_HOST_URL}}
+          SONAR_HOST_URL: ${{secrets.SONAR_HOST_URL}}
         with:
           projectBaseDir: app
           args: >
@@ -61,7 +61,7 @@ jobs:
           scan-ref: app/
           format: 'sarif'
           output: 'trivy-results.sarif'
-          severity: 'HIGH,critical'
+          severity: 'HIGH,CRITICAL'
 
       - name: Upload Trivy scan results to Github Security tab
         uses: github/codeql-action/upload-sarif@v3
