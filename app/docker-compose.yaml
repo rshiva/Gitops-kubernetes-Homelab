@@ -5,6 +5,7 @@ services:
     ports:
       - "8000:8000"
     command: ["-jar", "DynamoDBLocal.jar", "-inMemory"]
+    restart: on-failure
 
   web:
     build:

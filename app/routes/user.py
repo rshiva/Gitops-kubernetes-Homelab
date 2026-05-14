@@ -1,14 +1,21 @@
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from database.user import create_user, delete_user, get_user, get_users, update_user
+from metrics import task_created_total
 from models.user import User
 
 user_routes = APIRouter()
 
-# CREATE USER
+
 @user_routes.post("/create", response_model=User)
 def create(user: User):
-    return create_user(user.model_dump())
+    result = create_user(user.model_dump())
+    if isinstance(result, JSONResponse):
+        task_created_total.labels(status="error").inc()
+    else:
+        task_created_total.labels(status="success").inc()
+    return result
 
 # GET USER BY ID
 @user_routes.get("/get/{id}")
