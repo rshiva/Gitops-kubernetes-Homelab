@@ -1,25 +1,36 @@
 name: Push to ECR and Deploy to EKS
 on:
   pull_request:
-    brances:
-      - master
+    branches:
+      - main
     types: [closed]
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   build-push:
-    if: github.evemt.pull_request.merged == true
+    if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.set-tag.outputs.value}}
     steps:
-      - run: echo "The PR was successfully merged!"
       - name: checkout
         uses: actions/checkout@v4
+      - run: echo "The PR was successfully merged!"
+
+      - name: set image tag
+        id: set-tag
+        run: echo "value=${{ github.sha }}" >> $GITHUB_OUTPUT
       - name: configure AWS credentials OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN}}
           aws-region: ap-south-1
+
       - name: Login to Amazon ECR
-        id: login-ECR
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: build, tag, push docker image to amazon ECR
@@ -28,5 +39,9 @@ jobs:
           ECR_REPOSITORY: ${{ vars.ECR_REPO_NAME}}
           IMAGE_TAG: ${{github.sha}}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./app
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            ./app
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
