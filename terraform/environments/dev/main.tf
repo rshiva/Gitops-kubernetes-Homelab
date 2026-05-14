@@ -12,6 +12,12 @@ module "ecr"{
   region = var.region
 }
 
+module "dynamodb"{
+  source = "../../modules/dynamodb"
+  project_name    = var.project_name
+  env             = var.env
+}
+
 
 # module "eks"{
 #   source = "../../modules/eks"

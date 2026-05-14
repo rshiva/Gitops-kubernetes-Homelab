@@ -1,5 +1,15 @@
 name: Scan CI on pull request
-on: pull_request
+
+permissions:
+  contents: read
+  security-events: write # Required for uploading SARIF to Security Tab
+  actions: read          # Required for downloading artifacts
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
 
 jobs:
   build-test:
@@ -8,20 +18,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: use python 3.12
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
       - name: Install dependencies
         run: |
-          python -m pip isntall --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r app/requirements.txt
 
       - name: run tests
-        run: pytest app/tests/test-api.py --cov=app --cov-fail-under=80 --cov-report=xml:app/coverage.xml
+        env:
+          AWS_ACCESS_KEY_ID: local
+          AWS_SECRET_ACCESS_KEY: local
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION || 'ap-south-1' }}
+        run: pytest app/tests/test_api.py --cov=app --cov-fail-under=80 --cov-report=xml:app/coverage.xml
 
       - name: upload coverage
-        uses: action/upload-artifact@v7
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-xml
           path: app/coverage.xml
@@ -32,11 +46,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: download coverage report
+        uses: actions/download-artifact@v4
         with:
           name: coverage-xml
           path: app
       - name: Sonarqube Scan
         uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{secrets.SONAR_HOST_URL}}
         with:
           projectBaseDir: app
           args: >
@@ -44,12 +62,10 @@ jobs:
             -Dsonar.tests=tests/
             -Dsonar.test.exclusions=tests/**
             -Dsonar.verbose=true
-          env:
-            SONAR_TOKEN: ${{secrets.SONAR_TOKEN}}
-            SONAR_HOST_URL: ${{vars.SONAR_HOST_URL}}
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
 
   security-scan:
-    runs-on: ubuntu-server
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -60,7 +76,7 @@ jobs:
           scan-ref: app/
           format: 'sarif'
           output: 'trivy-results.sarif'
-          severity: 'HIGH,critical'
+          severity: 'HIGH,CRITICAL'
 
       - name: Upload Trivy scan results to Github Security tab
         uses: github/codeql-action/upload-sarif@v3
