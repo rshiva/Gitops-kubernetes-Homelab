@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       image-tag: ${{ steps.set-tag.outputs.value}}
+
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -23,6 +24,7 @@ jobs:
       - name: set image tag
         id: set-tag
         run: echo "value=${{ github.sha }}" >> $GITHUB_OUTPUT
+
       - name: configure AWS credentials OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -45,3 +47,30 @@ jobs:
             ./app
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      # kustomize is not pre-installed on ubuntu-latest; install it explicitly
+      # so `kustomize edit set image` is available in the deploy step
+      - name: Install kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Deploy to Dev
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          aws eks update-kubeconfig \
+            --region ap-south-1 \
+            --name devopsrt-homelab-dev-eks-cluster
+
+          cd k8s/overlays/dev
+
+
+          kustomize edit set image \
+            python-dynamo-lab-app-image=640565834670.dkr.ecr.ap-south-1.amazonaws.com/devopsrt-homelab-dev:$IMAGE_TAG
+
+          kubectl apply -k .
+
+          # Deployment name matches base (python-dynamo-lab-app); namePrefix was removed from the overlay.
+          # Namespace matches overlays/dev/kustomization.yaml namespace field.
+          kubectl rollout status deployment/python-dynamo-lab-app \
+            -n python-dynamo-lab \
+            --timeout=180s

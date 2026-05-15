@@ -8,20 +8,7 @@ metadata:
     app.kubernetes.io/name: python-dynamo-lab-app
     app.kubernetes.io/version: "1.0.0"
 spec:
-  replicas: 2
-  serviceAccountName: python-dynamo-lab-sa
-  securityContext:
-    runAsNonRoot: true
-    runAsUser: 1000
-    runAsGroup: 1000
-    fsGroup: 1000
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologykey: topology.kubernetes.io/zone
-      whenUnsatisfiable: ScheduleAnyway
-      labelSelector:
-        matchLabels:
-          app: python-dynamo-lab-app
+  replicas: 3
   selector:
     matchLabels:
       app: python-dynamo-lab-app
@@ -30,12 +17,25 @@ spec:
       labels:
         app: python-dynamo-lab-app
     spec:
+      # serviceAccountName must be under spec.template.spec, not spec
+      serviceAccountName: python-dynamo-lab-sa
+      # pod-level security context (fsGroup, runAs*) belongs here, not under spec
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      # spread pods evenly across AZs; ScheduleAnyway avoids blocking on single-AZ clusters
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone  # fixed: was topologykey (lowercase k)
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: python-dynamo-lab-app
       containers:
         - name: python-dynamo-lab-app
-          image: #ecr-image-path
-          envFrom:
-            - configMapRef:
-                name: python-dynamo-lab-config
+          image: python-dynamo-lab-app-image
           env:
             - name: AWS_DEFAULT_REGION
               value: "ap-south-1"

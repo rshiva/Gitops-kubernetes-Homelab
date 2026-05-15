@@ -31,7 +31,7 @@ spec:
   ingress:
   - from:
     - ipBlock:
-      cidr: 10.0.0.0/16
+        cidr: 10.0.0.0/16  # fixed: cidr must be indented under ipBlock, not a sibling
     ports:
     - protocol: TCP
       port: 8001
@@ -72,7 +72,7 @@ spec:
   egress:
   - to:
     - ipBlock:
-      cidr: 0.0.0.0/0       # tighten to VPC endpoint CIDR when available
+        cidr: 0.0.0.0/0  # fixed: same indentation bug as ALB policy; tighten to VPC endpoint CIDR when available
     ports:
     - protocol: TCP
       port: 443

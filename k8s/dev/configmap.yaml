@@ -1,9 +1,0 @@
-# yaml-language-server: $schema=kubernetes
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: python-dynamo-lab-config
-  namespace: python-dynamo-lab
-data:
-  DYNAMODB_TABLE_NAME: "devopsrt-dev-users"
-  AWS_DEFAULT_REGION: "ap-south-1"
