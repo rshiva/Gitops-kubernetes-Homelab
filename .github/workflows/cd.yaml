@@ -57,9 +57,9 @@ jobs:
         env:
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          aws eks update-kubeconfig \
-            --region ap-south-1 \
-            --name devopsrt-homelab-dev-eks-cluster
+          # aws eks update-kubeconfig \
+          #   --region ap-south-1 \
+          #   --name devopsrt-homelab-dev-eks-cluster
 
           cd k8s/overlays/dev
 
@@ -67,10 +67,16 @@ jobs:
           kustomize edit set image \
             python-dynamo-lab-app-image=640565834670.dkr.ecr.ap-south-1.amazonaws.com/devopsrt-homelab-dev:$IMAGE_TAG
 
-          kubectl apply -k .
+          git config user.email "ci@github.com"
+          git config user.name "Github Actions"
+          git add  kustomization.yaml
+          git commit -m "ci: update image tag to $IMAGE_TAG"
+          git push
 
-          # Deployment name matches base (python-dynamo-lab-app); namePrefix was removed from the overlay.
-          # Namespace matches overlays/dev/kustomization.yaml namespace field.
-          kubectl rollout status deployment/python-dynamo-lab-app \
-            -n python-dynamo-lab \
-            --timeout=180s
+          # kubectl apply -k .
+
+          # # Deployment name matches base (python-dynamo-lab-app); namePrefix was removed from the overlay.
+          # # Namespace matches overlays/dev/kustomization.yaml namespace field.
+          # kubectl rollout status deployment/python-dynamo-lab-app \
+          #   -n python-dynamo-lab \
+          #   --timeout=180s
